@@ -1,4 +1,4 @@
-# belajar-vibe-coding
+# Belajar-Vibe-Coding
 
 To install dependencies:
 
