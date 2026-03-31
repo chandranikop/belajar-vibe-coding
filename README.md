@@ -1,4 +1,4 @@
-# belajar-vibe-coding-pzn
+# belajar-vibe-coding
 
 To install dependencies:
 
