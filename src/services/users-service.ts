@@ -97,6 +97,17 @@ export class UsersService {
       },
     };
   }
+
+  async logoutUser(token: string) {
+    // 1. Delete session from database directly and check if it existed
+    const [result] = await db.delete(sessions).where(eq(sessions.token, token));
+
+    if ((result as any).affectedRows === 0) {
+      throw new Error("Unauthorized");
+    }
+
+    return { data: "OK" };
+  }
 }
 
 export const usersService = new UsersService();
