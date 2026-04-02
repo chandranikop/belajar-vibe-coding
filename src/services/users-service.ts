@@ -61,6 +61,31 @@ export class UsersService {
 
     return { data: userWithoutPassword };
   }
+
+  async getCurrentUser(token: string) {
+    // 1. Check if user exists by token
+    const existingUser = await db
+      .select()
+      .from(users)
+      .where(eq(users.token, token))
+      .limit(1);
+
+    const user = existingUser[0];
+
+    if (!user) {
+      throw new Error("Unauthorized");
+    }
+
+    // 2. Return user details (without sensitive fields like password or token)
+    return {
+      data: {
+        id: user.id,
+        name: user.username,
+        email: user.email,
+        created_at: user.createdAt,
+      },
+    };
+  }
 }
 
 export const usersService = new UsersService();
