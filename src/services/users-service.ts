@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { users } from "../db/schema";
+import { users, sessions } from "../db/schema";
 import { eq } from "drizzle-orm";
 
 export class UsersService {
@@ -56,27 +56,38 @@ export class UsersService {
       throw new Error("Email atau password salah");
     }
 
-    // 3. Return user (excluding password)
-    const { password: _, ...userWithoutPassword } = user;
+    // 3. Generate UUID token and save to sessions table
+    const token = crypto.randomUUID();
 
-    return { data: userWithoutPassword };
+    await db.insert(sessions).values({
+      token,
+      userId: user.id,
+    });
+
+    return { data: token };
   }
 
   async getCurrentUser(token: string) {
-    // 1. Check if user exists by token
-    const existingUser = await db
-      .select()
-      .from(users)
-      .where(eq(users.token, token))
+    // 1. Find session by token and join with users table
+    const result = await db
+      .select({
+        id: users.id,
+        username: users.username,
+        email: users.email,
+        createdAt: users.createdAt,
+      })
+      .from(sessions)
+      .innerJoin(users, eq(sessions.userId, users.id))
+      .where(eq(sessions.token, token))
       .limit(1);
 
-    const user = existingUser[0];
+    const user = result[0];
 
     if (!user) {
       throw new Error("Unauthorized");
     }
 
-    // 2. Return user details (without sensitive fields like password or token)
+    // 2. Return user details (without sensitive fields)
     return {
       data: {
         id: user.id,
