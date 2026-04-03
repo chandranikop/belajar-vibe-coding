@@ -2,7 +2,9 @@ import { Elysia, t } from "elysia";
 import { usersService } from "../services/users-service";
 
 export const usersRoute = new Elysia({ prefix: "/api/users" })
-  .onError(({ error, set }) => {
+  .onError(({ code, error, set }) => {
+    if (code === "VALIDATION" || code === "PARSE") return;
+
     const errorMsg = (error as any).message || String(error);
 
     if (errorMsg === "Unauthorized" || errorMsg === "Email atau password salah") {
@@ -26,9 +28,9 @@ export const usersRoute = new Elysia({ prefix: "/api/users" })
     },
     {
       body: t.Object({
-        name: t.String(),
-        email: t.String(),
-        password: t.String(),
+        name: t.String({ minLength: 1, maxLength: 255 }),
+        email: t.String({ format: "email", maxLength: 255 }),
+        password: t.String({ minLength: 6, maxLength: 255 }),
       }),
     }
   )
