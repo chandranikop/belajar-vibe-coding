@@ -1,6 +1,10 @@
 import { Elysia, t } from "elysia";
 import { usersService } from "../services/users-service";
 
+const errorResponse = t.Object({
+  error: t.String(),
+});
+
 export const usersRoute = new Elysia({ prefix: "/api/users" })
   .onError(({ code, error, set }) => {
     if (code === "VALIDATION" || code === "PARSE") return;
@@ -32,6 +36,18 @@ export const usersRoute = new Elysia({ prefix: "/api/users" })
         email: t.String({ format: "email", maxLength: 255 }),
         password: t.String({ minLength: 6, maxLength: 255 }),
       }),
+      detail: {
+        tags: ["Users"],
+        summary: "Daftar User Baru",
+        description:
+          "Mendaftarkan user baru dengan mengirimkan name, email, dan password",
+      },
+      response: {
+        200: t.Object({
+          data: t.String(),
+        }),
+        400: errorResponse,
+      },
     }
   )
   .post(
@@ -45,6 +61,17 @@ export const usersRoute = new Elysia({ prefix: "/api/users" })
         email: t.String(),
         password: t.String(),
       }),
+      detail: {
+        tags: ["Users"],
+        summary: "Login User",
+        description: "Mengotentikasi user dan mengembalikan Bearer Token",
+      },
+      response: {
+        200: t.Object({
+          data: t.String(),
+        }),
+        401: errorResponse,
+      },
     }
   )
   .derive(({ headers }) => {
@@ -60,6 +87,24 @@ export const usersRoute = new Elysia({ prefix: "/api/users" })
       return { error: "Unauthorized" };
     }
     return await usersService.getCurrentUser(token);
+  }, {
+    detail: {
+      tags: ["Users"],
+      summary: "Get Current User",
+      description: "Mengambil data user yang sedang login berdasarkan Bearer Token",
+      security: [{ bearerAuth: [] }]
+    },
+    response: {
+      200: t.Object({
+        data: t.Object({
+          id: t.Number(),
+          name: t.String(),
+          email: t.String(),
+          created_at: t.Nullable(t.Date()),
+        }),
+      }),
+      401: errorResponse,
+    }
   })
   .delete("/logout", async ({ token, set }) => {
     if (!token) {
@@ -67,4 +112,17 @@ export const usersRoute = new Elysia({ prefix: "/api/users" })
       return { error: "Unauthorized" };
     }
     return await usersService.logoutUser(token);
+  }, {
+    detail: {
+      tags: ["Users"],
+      summary: "Logout User",
+      description: "Menghapus sesi token user",
+      security: [{ bearerAuth: [] }]
+    },
+    response: {
+      200: t.Object({
+        data: t.String(),
+      }),
+      401: errorResponse,
+    }
   });
